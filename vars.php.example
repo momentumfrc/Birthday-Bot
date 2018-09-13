@@ -1,0 +1,18 @@
+<?php
+$DBUser = "";
+$DBPass = "";
+
+$Database = "";
+$table = "";
+
+$posturl = "";
+
+
+$requirelogin = false;
+$usepassword = "";
+/*
+    The birthdays table holds the list of people and their birthdays
+    Schema: (`id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY, `birthday` VARCHAR(255) NOT NULL, `name` VARCHAR(255) NOT NULL)
+*/
+
+?>
