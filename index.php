@@ -8,6 +8,10 @@
         header('Location: login.php');
     }
 
+    function writeToLog($string, $log) {
+        file_put_contents("./".$log.".log", date("d-m-Y_h:i:s")."-- ".$string."\r\n", FILE_APPEND);
+    }
+
     $DB = new mysqli("localhost", $DBUser, $DBPass, $Database);
     if($DB->connect_error) {
         die("Connection failed: ".$DB->connect_error);
@@ -16,6 +20,16 @@
     if($_SERVER["REQUEST_METHOD"] === "POST") {
         switch($_POST["action"]) {
             case "delete":
+                $stmt = $DB->prepare("SELECT name FROM ".$table." WHERE `id`=?");
+                if($stmt === FALSE) {
+                    throw new Exception($DB->error);
+                }
+                $stmt->bind_param("i", $_POST["id"]);
+                $stmt->execute();
+                $stmt->bind_result($name);
+                $stmt->fetch();
+                writeToLog("IP ".$_SERVER['REMOTE_ADDR']." deleted ".$name."'s birthday", "users");
+                $stmt->close();
                 $stmt = $DB->prepare("DELETE FROM ".$table." WHERE `id`=?");
                 if($stmt === FALSE) {
                     throw new Exception($DB->error);
@@ -25,6 +39,7 @@
                 $stmt->close();
                 break;
             case "add":
+                writeToLog("IP ".$_SERVER['REMOTE_ADDR']." added ".$_POST["name"]."'s birthday","users");
                 $stmt = $DB->prepare("INSERT INTO ".$table." (`birthday`, `name`) VALUES ( ? , ? )");
                 if($stmt === FALSE) {
                     throw new Exception($DB->error);
