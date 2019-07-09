@@ -12,6 +12,16 @@
         file_put_contents("./".$log.".log", date("d-m-Y_h:i:s")."-- ".$string."\r\n", FILE_APPEND);
     }
 
+    function sql_query($DB, $sql, $varstr, ...$vars) {
+        $stmt = $DB->prepare($sql);
+        if($stmt === FALSE) {
+            throw new Exception('SQL ERROR: '.$DB->error);
+        }
+        $stmt->bind_param($varstr, ...$vars);
+        $stmt->execute();
+        $stmt->close();
+    }
+
     $DB = new mysqli("localhost", $DBUser, $DBPass, $Database);
     if($DB->connect_error) {
         die("Connection failed: ".$DB->connect_error);
@@ -40,14 +50,16 @@
                 break;
             case "add":
                 writeToLog("IP ".$_SERVER['REMOTE_ADDR']." added ".$_POST["name"]."'s birthday","users");
-                $stmt = $DB->prepare("INSERT INTO ".$table." (`birthday`, `name`) VALUES ( ? , ? )");
-                if($stmt === FALSE) {
-                    throw new Exception($DB->error);
-                }
                 $bday = $_POST["month"]."-".$_POST["day"];
-                $stmt->bind_param("ss", $bday, $_POST["name"]);
-                $stmt->execute();
-                $stmt->close();
+                if(empty($_POST['year']) && empty($_POST['slackid'])) {
+                    sql_query($DB, "INSERT INTO ".$table." (`birthday`, `name`) VALUES ( ? , ? )", "ss", $bday, $_POST["name"]);
+                } elseif(empty($_POST['slackid'])) {
+                    sql_query($DB, "INSERT INTO ".$table." (`birthday`, `name`, `year`) VALUES ( ? , ? , ? )", "ssi", $bday, $_POST["name"], $_POST["year"]);
+                } elseif(empty($_POST['year'])) {
+                    sql_query($DB, "INSERT INTO ".$table." (`birthday`, `name`, `slackid`) VALUES ( ? , ?, ? )", "sss", $bday, $_POST["name"], $_POST["slackid"]);
+                } else {
+                    sql_query($DB, "INSERT INTO ".$table." (`birthday`, `name`, `year`, `slackid`) VALUES ( ? , ? , ? , ? )", "ssis", $bday, $_POST["name"], $_POST['year'], $_POST['slackid']);
+                }
                 break;
             default:
                 die("Invalid post data");
@@ -105,6 +117,7 @@
     <table>
     <tr>
         <th>Name</th>
+        <th>Slack ID</th>
         <th>Birthday</th>
         <th id="actions">Actions</th>
     </tr>
@@ -114,13 +127,22 @@
         throw new Exception($DB->error);
     }
     if($result->num_rows === 0) {
-        echo('<tr><td colspan="3">No birthdays!</td></tr>');
+        echo('<tr><td colspan="4">No birthdays!</td></tr>');
     } else {
         while($row = $result->fetch_assoc()) {
             $bday = DateTime::createFromFormat("!m-d", $row['birthday']);
             echo('<tr>');
             echo('<td>'.$row["name"].'</td>');
-            echo('<td>'.$bday->format('F j').'</td>');
+            if(isset($_row["slackid"])) {
+                echo('<td>'.$row["slackid"].'</td>');
+            } else {
+                echo('<td></td>');
+            }
+            if(isset($row['year']) && !empty($row['year'])) {
+                echo('<td>'.$bday->format('F j').', '.$row['year'].'</td>');
+            } else {
+                echo('<td>'.$bday->format('F j').'</td>');
+            }
             echo('<td>
                     <form action="'.htmlentities($_SERVER["PHP_SELF"]).'" method="POST">
                     <input name="id" type="hidden" value="'.$row['id'].'">
@@ -134,7 +156,8 @@
     ?>
     <tr>
         <form action="<?php echo(htmlentities($_SERVER["PHP_SELF"])); ?>" method="POST">
-        <td><input name="name" type="text" placeholder="Name"></td>
+        <td><input name="name" type="text" placeholder="Name" required></td>
+        <td><input name="slackid" type="text" placeholder="Slack ID"></td>
         <td>
             <select name="month">
                 <?php
@@ -144,9 +167,10 @@
                 }
                 ?>
             </select>
-            <input name="day" type="text" pattern="[0-3][0-9]" title="Two digit day" placeholder="DD" size="3">
+            <input name="day" type="text" pattern="[0-3][0-9]" title="Two digit day" placeholder="DD" size="3" required>
+            <input name="year" type="text" pattern="[0-9]{4}" title="Four digit year" placeholder="YYYY" size="5">
         </td>
-        <td><input type="submit"></td>
+        <td><input type="submit" value="Add"></td>
         <input name="action" type="hidden" value="add">
         </form>
     </tr>

@@ -1,5 +1,13 @@
 <?php
 
+function ordinal($number) {
+    $ends = array('th','st','nd','rd','th','th','th','th','th','th');
+    if ((($number % 100) >= 11) && (($number%100) <= 13))
+        return $number. 'th';
+    else
+        return $number. $ends[$number % 10];
+}
+
 error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
 ini_set('display_errors', TRUE);
 
@@ -24,16 +32,20 @@ if($DB->connect_error) {
     die("Connection failed: ".$DB->connect_error);
 }
 
-$stmt = $DB->prepare("SELECT `name` FROM ".$table." WHERE `birthday`=?");
+$stmt = $DB->prepare("SELECT `name`, `year`, `slackid` FROM ".$table." WHERE `birthday`=?");
+if($stmt === FALSE) {
+    throw new Exception('SQL ERROR: '.$DB->error);
+}
 date_default_timezone_set('America/Los_Angeles');
 $today = date("m-d");
+$todayyear = date("Y");
 echo("Testing for birthdays on ".$today."\n");
 $stmt->bind_param("s",$today);
 $stmt->execute();
-$stmt->bind_result($name);
+$stmt->bind_result($name, $year, $slackid);
 $birthdays = array();
 while($stmt->fetch()) {
-    $birthdays[] = $name;
+    $birthdays[] = array("name"=>$name, "year"=>$year, "slackid"=>$slackid);
 }
 $stmt->close();
 
@@ -42,10 +54,24 @@ if(count($birthdays) === 0) {
 }
 
 foreach($birthdays as $bday) {
-    $message = array("text"=>"*Happy Birthday ".$bday."!*");
-    echo("It's ".$bday."'s birthday\n");
-    postToSlack(json_encode($message));
+    $message = "*Happy ";
+    if(isset($bday["year"])) {
+        echo($todayyear."-".$bday["year"]."\n");
+        $age = $todayyear - $bday["year"];
+        $message .= ordinal($age);
+        $message .= ' ';
+    }
+    $message .= 'Birthday ';
+    if(isset($bday["slackid"])) {
+        $message .= '<@'.$bday["slackid"].'>';
+    } else {
+        $message .= $bday["name"];
+    }
+    $message .= '!*';
+    echo($message);
+    postToSlack(json_encode(array("text"=>$message)));
 }
+
 postToSlack(json_encode(array("text"=>":tada::tada::tada:")));
 
 ?>
