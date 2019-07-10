@@ -61,8 +61,24 @@
                     sql_query($DB, "INSERT INTO ".$table." (`birthday`, `name`, `year`, `slackid`) VALUES ( ? , ? , ? , ? )", "ssis", $bday, $_POST["name"], $_POST['year'], $_POST['slackid']);
                 }
                 break;
+            case "update":
+                writeToLog("IP ".$_SERVER['REMOTE_ADDR']." updated ".$_POST["name"]."'s birthday","users");
+                if(empty($_POST['id'])) {
+                    throw new Exception("DataFormatError: Cannot update with empty id");
+                }
+                $bday = $_POST["month"]."-".$_POST["day"];
+                if(empty($_POST['year']) && empty($_POST['slackid'])) {
+                    sql_query($DB, "UPDATE ".$table."  SET `birthday`=?, `name`=? WHERE `id`=?", "ssi", $bday, $_POST["name"], $_POST['id']);
+                } elseif(empty($_POST['slackid'])) {
+                    sql_query($DB, "UPDATE ".$table." SET `birthday`=?, `name`=?, `year`=? WHERE `id`=?", "ssii", $bday, $_POST["name"], $_POST["year"], $_POST['id']);
+                } elseif(empty($_POST['year'])) {
+                    sql_query($DB, "UPDATE ".$table." SET `birthday`=?, `name`=?, `slackid`=? WHERE `id`=?", "sssi", $bday, $_POST["name"], $_POST["slackid"], $_POST['id']);
+                } else {
+                    sql_query($DB, "UPDATE ".$table." SET `birthday`=?, `name`=?, `year`=?, `slackid`=? WHERE `id`=?", "ssisi", $bday, $_POST["name"], $_POST['year'], $_POST['slackid'], $_POST['id']);
+                }
+                break;
             default:
-                die("Invalid post data");
+                die("DataFormatError: Invalid action \"".$_POST['action']."\"");
                 break;
         }
     }
@@ -133,7 +149,7 @@
             $bday = DateTime::createFromFormat("!m-d", $row['birthday']);
             echo('<tr>');
             echo('<td>'.$row["name"].'</td>');
-            if(isset($_row["slackid"])) {
+            if(isset($row["slackid"])) {
                 echo('<td>'.$row["slackid"].'</td>');
             } else {
                 echo('<td></td>');
