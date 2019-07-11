@@ -39,7 +39,7 @@ if($stmt === FALSE) {
 date_default_timezone_set('America/Los_Angeles');
 $today = date("m-d");
 $todayyear = date("Y");
-echo("Testing for birthdays on ".$today."\n");
+echo("Testing for birthdays on ".$today.": ");
 $stmt->bind_param("s",$today);
 $stmt->execute();
 $stmt->bind_result($name, $year, $slackid);
@@ -67,9 +67,11 @@ foreach($birthdays as $bday) {
         $message .= $bday["name"];
     }
     $message .= '!*';
-    echo($message."\n");
+    echo("It's ".$bday["name"].'\'s birthday! ');
     postToSlack(json_encode(array("text"=>$message)));
 }
+
+echo("\n");
 
 postToSlack(json_encode(array("text"=>":tada::tada::tada:")));
 
