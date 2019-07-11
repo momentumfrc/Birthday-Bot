@@ -56,7 +56,6 @@ if(count($birthdays) === 0) {
 foreach($birthdays as $bday) {
     $message = "*Happy ";
     if(isset($bday["year"])) {
-        echo($todayyear."-".$bday["year"]."\n");
         $age = $todayyear - $bday["year"];
         $message .= ordinal($age);
         $message .= ' ';
@@ -68,7 +67,7 @@ foreach($birthdays as $bday) {
         $message .= $bday["name"];
     }
     $message .= '!*';
-    echo($message);
+    echo($message."\n");
     postToSlack(json_encode(array("text"=>$message)));
 }
 

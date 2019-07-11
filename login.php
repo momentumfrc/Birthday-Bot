@@ -59,7 +59,7 @@
     <h1>Enter password:</h1>
     <form method="POST" action="<?php echo(htmlentities($_SERVER["PHP_SELF"])); ?>">
         <input name="password" type="password" placeholder="Password">
-        <input type="submit">
+        <input type="submit" value="Log In">
     </form>
     <?php
     if($loginfail) {
