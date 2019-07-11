@@ -164,7 +164,7 @@
             } else {
                 numstr = i;
             }
-            if(i+1 === selected) {
+            if(i === selected) {
                 chooserstr += '<option value="'+numstr+'" selected>'+monthnames[i-1]+'</option>';
             } else {
                 chooserstr += '<option value="'+numstr+'">'+monthnames[i-1]+'</option>';
