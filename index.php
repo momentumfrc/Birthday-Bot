@@ -91,6 +91,14 @@
                     sql_query($DB, "UPDATE ".$table." SET `birthday`=?, `name`=?, `year`=?, `slackid`=? WHERE `id`=?", "ssisi", $bday, $_POST["name"], $_POST['year'], $_POST['slackid'], $_POST['id']);
                 }
                 break;
+            case "run":
+                ob_start();
+                include('post.php');
+                $output = ob_get_contents();
+                ob_end_clean();
+
+                writeToLog($output, "manual");
+                break;
             default:
                 die("DataFormatError: Invalid action \"".$_POST['action']."\"");
                 break;
@@ -363,6 +371,12 @@
         <td class="action-td"><button class="addbutton">Add</button></td>
     </tr>
     </table>
+
+    <form id="run" action="<?php echo(htmlentities($_SERVER['PHP_SELF'])); ?>" method="POST">
+    <p class="label" style="margin: 20px 0px 0px 0px">Actions:</p>
+        <input type="hidden" name="action" value="run">
+        <input type="submit" value="Post to Slack">
+    </form>
 
 </div>
 </body>

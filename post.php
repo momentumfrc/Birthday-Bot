@@ -11,9 +11,11 @@ function ordinal($number) {
 error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
 ini_set('display_errors', TRUE);
 
-if (! (php_sapi_name() == "cli")) {
-    http_response_code(403);
-    die('<html><body><p>This file is meant to be run from the command-line by crontab, not by '.php_sapi_name().'</p></body></html>');
+if (php_sapi_name() !== "cli") {
+    if (basename(__FILE__) == basename($_SERVER["SCRIPT_FILENAME"])) {
+        http_response_code(403);
+        die('<html><body><p>This file is meant to be run from the command-line by crontab, not by '.php_sapi_name().'</p></body></html>');
+    }
 }
 require_once 'vars.php';
 
