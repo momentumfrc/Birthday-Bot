@@ -16,6 +16,7 @@ if (! (php_sapi_name() == "cli")) {
     die('<html><body><p>This file is meant to be run from the command-line by crontab, not by '.php_sapi_name().'</p></body></html>');
 }
 require_once 'vars.php';
+
 function postToSlack($json) {
     global $posturl;
     $ch = curl_init($posturl);
@@ -23,9 +24,16 @@ function postToSlack($json) {
     curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $result = curl_exec($ch);
+    $info = curl_getinfo($ch);
     curl_close($ch);
+
+    if($info["http_code"] != 200) {
+        die("Slack error: ".$result);
+    }
+
     return $result;
 }
+
 
 $DB = new mysqli("127.0.0.1", $DBUser, $DBPass, $Database);
 if($DB->connect_error) {
