@@ -30,7 +30,11 @@ function postToSlack($json) {
     curl_close($ch);
 
     if($info["http_code"] != 200) {
-        die("Slack error: ".$result);
+        echo("\nSLACK HTTP ERROR!!\n");
+        echo("REQUEST: ".$json."\n");
+        echo("RESPONSE_INFO: ".json_encode($info)."\n");
+        echo("RESPONSE: ".$result."\n");
+        die("\n");
     }
 
     return $result;
