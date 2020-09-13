@@ -19,8 +19,13 @@ if (php_sapi_name() !== "cli") {
 }
 require_once 'vars.php';
 
-function postToSlack($json) {
+function postToSlack($json, $retry=3) {
     global $posturl;
+
+    if($retry <= 0) {
+        die("\n");
+    }
+
     $ch = curl_init($posturl);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
@@ -30,11 +35,12 @@ function postToSlack($json) {
     curl_close($ch);
 
     if($info["http_code"] != 200) {
-        echo("\nSLACK HTTP ERROR!!\n");
-        echo("REQUEST: ".$json."\n");
-        echo("RESPONSE_INFO: ".json_encode($info)."\n");
-        echo("RESPONSE: ".$result."\n");
-        die("\n");
+        echo("\n  SLACK HTTP ERROR!!\n");
+        echo("    REQUEST: ".$json."\n");
+        echo("    RESPONSE_INFO: ".json_encode($info)."\n");
+        echo("    RESPONSE: ".$result."\n");
+
+        postToSlack($json, $retry - 1);
     }
 
     return $result;
